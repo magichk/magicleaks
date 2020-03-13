@@ -136,9 +136,7 @@ def emailreputation(email):
 	emailreputation = json.loads(response.text)
 	try:
 		reputation = emailreputation["reputation"]
-		print(response.text)
 		credentials_leaked = emailreputation["details"]["credentials_leaked"]
-		print(response.text)
 		data_breach = emailreputation["details"]["data_breach"]
 		last_seen = emailreputation["details"]["last_seen"]
 		print(" ")
