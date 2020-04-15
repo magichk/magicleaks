@@ -72,7 +72,7 @@ def parse_firefox_monitor(response):
 		print("\033[1;31m\t--> " + response.text[start_breachName:end_breachName])
 		end_key = end_breachName
 		start_index = response.text.find("breach-key", end_key) + 12
-		while start_index > 12:
+		while start_index > 12 and (start_index < response.text.find("breach-title", start_breachName + 12) or response.text.find("breach-title", start_breachName + 12) < 12):
 			end_index = response.text.find("</span>", start_index)
 			start_key = response.text.find("breach-value", end_index) + 14
 			end_key = response.text.find("</span>", start_key)
