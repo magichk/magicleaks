@@ -8,7 +8,6 @@ import json  # To parse json response
 import re  # To parse regular expressions
 import hashlib  # To create the email hash for certain webs
 import os
-import requests
 import subprocess
 
 # Print banner
