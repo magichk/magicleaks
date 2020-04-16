@@ -66,7 +66,7 @@ def checkArgs():
 def check_email(email):
 	if not onlyPasswords:
 		print(whiteB_color + "----------------------------------------\nChecking email account " + email + " ...\n----------------------------------------")
-	pattern = "(^[a-zA-Z-1-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
+	pattern = "(^[a-zA-Z-0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
 	result = re.match(pattern, email)
 	if (result):
 		if not onlyPasswords:
