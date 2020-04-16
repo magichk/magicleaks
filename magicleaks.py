@@ -251,6 +251,9 @@ if __name__ == "__main__":
 			print(red_color + "Error: The file not exist or bad format.")
 	if (args.domain):
 		try:
+			if not args.tor:
+				print(red_color + "Error: This functionality need tor to work.")
+				exit(1)
 			domain = args.domain
 			if (domain[0] != '@'):
 				domain = '@' + domain
