@@ -23,6 +23,9 @@ gren_color = "\033[1;32m"
 whiteB_color = "\033[1;37m"
 detect_color = "\033[1;34m"
 
+# Output Type
+onlyPasswords = False
+
 ######### Print banner
 
 print("\033[1;33;40m __  __    _    ____ ___ ____ _     _____    _    _  ______  \33[00m")
@@ -40,15 +43,17 @@ def checkArgs():
 	parser = argparse.ArgumentParser(description=red_color + 'MagicLeaks 1.0\n' + info_color)
 	parser.add_argument('-e', "--email", action="store",
 						dest='email',
-	                    help="Email address to search")
+	                    help="Email address to search.")
 	parser.add_argument('-f', "--file", action="store",
 						dest='file',
-	                    help="File with email accounts to search leaks")
+	                    help="File with email accounts to search leaks.")
 	parser.add_argument('-d', "--domain", action="store",
 						dest='domain',
 	                    help="Domain to search email leaks")
 	parser.add_argument('-t', "--tor", action="store_true",
 	                    help="Use Tor to search leaks in onion sites, need also set the domain or file.")
+	parser.add_argument('-oP', "--onlyPasswords", action="store_true",
+	                    help="Return only the ouput in format -> user@domain:password.")
 	args = parser.parse_args()
 	if (len(sys.argv)==1) or (args.tor==True and (not args.email and not args.file and not args.domain)):
 		parser.print_help(sys.stderr)
@@ -59,18 +64,21 @@ def checkArgs():
 ############ Script functions ##############
 # Check the email in Firefox Monitor
 def check_email(email):
-	print(whiteB_color + "----------------------------------------\nChecking email account " + email + " ...\n----------------------------------------")
+	if not onlyPasswords:
+		print(whiteB_color + "----------------------------------------\nChecking email account " + email + " ...\n----------------------------------------")
 	pattern = "(^[a-zA-Z-1-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
 	result = re.match(pattern, email)
 	if (result):
-		check_firefox_monitor(email)
-		check_pastebinLeaks(email)
-		emailreputation(email)
+		if not onlyPasswords:
+			check_firefox_monitor(email)
+			check_pastebinLeaks(email)
+			emailreputation(email)
 		if (args.tor):
 			tor_main(email)
 	else:
 		print(red_color + "Error: " + email + " is not a valid email (bad format email)" + normal_color)
-	print(whiteB_color + "----------------------------------------\n----------------------------------------")
+	if not onlyPasswords:
+		print(whiteB_color + "----------------------------------------\n----------------------------------------")
 
 
 def parse_firefox_monitor(response):
@@ -201,9 +209,14 @@ def parse_pwndb_response(text, is_domain):
 	for leak in leaks:
 		try:
 			if is_domain:
-				data = leak.split("[luser] =>")[1].split("[")[0].strip() + "@" + leak.split("[domain] =>")[1].split("[")[0].strip()
-				if not data in dataLeak:
-					dataLeak.append(data.lower())
+				if onlyPasswords:
+					dataLeak.append(leak.split("[luser] =>")[1].split("[")[0].strip() + "@" +
+						leak.split("[domain] =>")[1].split("[")[0].strip() + ":" +
+						leak.split("[password] =>")[1].split(")")[0].strip())
+				else:
+					data = leak.split("[luser] =>")[1].split("[")[0].strip() + "@" + leak.split("[domain] =>")[1].split("[")[0].strip()
+					if not data in dataLeak:
+						dataLeak.append(data.lower())
 			else:
 				data = leak.split("[password] =>")[1].split(")")[0].strip()
 				dataLeak.append(data)
@@ -211,14 +224,20 @@ def parse_pwndb_response(text, is_domain):
 			pass
 	return dataLeak
 
+
 def tor_main(email):
 	try:
-		print(info_color + "--------------------\nChecking leaks on tor...\n--------------------")
+		if  not onlyPasswords:
+			print(info_color + "--------------------\nChecking leaks on tor...\n--------------------")
 		passwords = pwndb_main(email, False)
-		if not passwords:
-			print (gren_color + "No leaks found" + normal_color)
-		for i in passwords:
-			print (detect_color + "This is a passwords leakeds for this email account: " + red_color + str(i) + normal_color)
+		if  not onlyPasswords:
+			if not passwords:
+				print (gren_color + "No leaks found" + normal_color)
+			for i in passwords:
+				print (detect_color + "This is a passwords leakeds for this email account: " + red_color + str(i) + normal_color)
+		else:
+			for i in passwords:
+				print (email+ ":" + str(i))
 	except:
 		print (red_color + "You have problems with your connection to the tor proxy or pwndb is not accessible." + normal_color)
 
@@ -226,6 +245,7 @@ def tor_main(email):
 ########## Main function #################3
 if __name__ == "__main__":
 	args = checkArgs()
+	onlyPasswords = args.onlyPasswords
 	if (args.tor):
 		tor_service = os.system("service tor status >> /dev/null")
 		if(tor_service != 0):
@@ -240,7 +260,8 @@ if __name__ == "__main__":
 			check_email(email)
 	if (args.file):
 		try:
-			print(whiteB_color + "--->Reading file with email accounts...<---")
+			if  not onlyPasswords:
+				print(whiteB_color + "--->Reading file with email accounts...<---")
 			with open(sys.argv[2]) as myfile:
 				lines = myfile.readlines()
 			for email in lines:
@@ -257,10 +278,14 @@ if __name__ == "__main__":
 			domain = args.domain
 			if (domain[0] != '@'):
 				domain = '@' + domain
-			print(whiteB_color + "--->Searching email accounts leaks on " + domain + " domain...<---")
+			if  not onlyPasswords:
+				print(whiteB_color + "--->Searching email accounts leaks on " + domain + " domain...<---")
 			email_list = pwndb_main(domain, True)
 			if not email_list:
 				print(gren_color + "No leaks found for this domain" + normal_color)
+			elif onlyPasswords:
+				for line in email_list:
+					print(line)
 			else:
 				print(detect_color + "Found " + str(len(email_list)) + " accounts with leaks in selected domain: \n" +
 					red_color + ' || '.join(email_list))
