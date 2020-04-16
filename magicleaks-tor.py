@@ -1,5 +1,6 @@
 #!/usr/bin/python3
 
+# Need execute with root premissions in order to change TOR IP
 # Librerias importadas de 3os
 import requests  # Request to external site or api
 import urllib3  # Request to external site or api
@@ -10,6 +11,8 @@ import hashlib  # To create the email hash for certain webs
 import os
 import subprocess
 
+# Global variables
+tor_proxy = {'http': 'socks5h://127.0.0.1:9050', 'https': 'socks5h://127.0.0.1:9050'}
 # Print banner
 
 print("\033[1;33;40m __  __    _    ____ ___ ____ _     _____    _    _  ______  \33[00m")
@@ -60,6 +63,7 @@ def check_email(email):
 	else:
 		print("\033[1;31mError: La direccion de correo no esta en un formato correcto")
 
+
 def parse_firefox_monitor(response):
 	start_breachName = response.text.find("breach-title")
 	leaks = False
@@ -83,6 +87,7 @@ def parse_firefox_monitor(response):
 	if not leaks:
 		print("\033[1;32mThis email account not appears on Firefox Monitor")
 
+
 def check_firefox_monitor(email):
 	print("\033[1;33mChecking email account " + email + " on Firefox Monitor...")
 	print("\033[1;33m-----------------------------------------------")
@@ -92,7 +97,7 @@ def check_firefox_monitor(email):
 		'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
 	client = requests.Session()
 	client.headers.update(headers)
-	response = client.get(url_form)
+	response = client.get(url_form, proxies=tor_proxy)
 	inicio_csrf = response.text.find("_csrf")
 	if (inicio_csrf != -1):
 		inicio_csrf = response.text.find("value", inicio_csrf)
@@ -110,13 +115,14 @@ def check_firefox_monitor(email):
 			# Do the query
 			url = "https://monitor.firefox.com/scan"
 			params = {"_csrf": csrfToken, "email": email, "pageToken": "", "scannedEmailId": scannedEmailID, "emailHash": emailHash}
-			response = client.post(url, params)
+			response = client.post(url, params, proxies=tor_proxy)
 			client.close()
 			parse_firefox_monitor(response)
 	else:
 		print("\033[1;31mError: No ha sido posible conectar con Firefox Monitor (existe un limite de peticiones por hora)")
 	print("\033[1;37m--------------------------------------------------------")
 	print("\033[1;37m--------------------------------------------------------")
+
 
 def check_pasterbinLeaks(email):
 	print("\033[1;33mChecking email account " + email + " on pastebin leaks...")
@@ -139,10 +145,11 @@ def check_pasterbinLeaks(email):
 	print("\033[1;37m--------------------------------------------------------")
 	print("\033[1;37m--------------------------------------------------------")
 
+
 def emailreputation(email):
 	print("\033[1;33mChecking emailrep.io for " + email + " account ")
 	print("\033[1;33m-----------------------------------------------")
-	response = requests.get('https://emailrep.io/' + email)
+	response = requests.get('https://emailrep.io/' + email, proxies=tor_proxy)
 	emailreputation = json.loads(response.text)
 	try:
 		reputation = emailreputation["reputation"]
@@ -162,13 +169,6 @@ def emailreputation(email):
 		print("\033[1;31mError: " + emailreputation["reason"])
 	print("\033[1;37m--------------------------------------------------------")
 	print("\033[1;37m--------------------------------------------------------")
-
-
-
-
-
-
-
 
 
 def pwndb_main(email, session):
@@ -220,10 +220,9 @@ def parse_pwndb_response(text):
 
 
 def pwndb_main_funct(email):
-	proxy = '127.0.0.1:9050'
 	passwords = []
 	session = requests.session()
-	session.proxies = {'http': 'socks5h://{}'.format(proxy), 'https': 'socks5h://{}'.format(proxy)}
+	session.proxies = tor_proxy
 	try:
 		passwords = pwndb_main(email, session)
 	except ConnectionError:
@@ -231,7 +230,6 @@ def pwndb_main_funct(email):
 	except Exception as e:
 		print(e)
 	return passwords
-
 
 
 def pwndb(email):
@@ -244,12 +242,9 @@ def pwndb(email):
 	return passwords
 
 
-
-
 # Main function
 def main():
 	p = subprocess.Popen(["tor"], stdout=subprocess.PIPE, shell=True)
-
 	check = False
 	check = checkArgs()
 	if (check == 1):
@@ -258,6 +253,7 @@ def main():
 			pattern = "(^[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+$)"
 			result = re.match(pattern, sys.argv[2])
 			if (result):
+				os.system("killall -HUP tor")
 				email = sys.argv[2]
 				print("\033[1;37mChecking email account " + email + " ...")
 				print("\033[1;37m------------------------------")
@@ -283,6 +279,7 @@ def main():
 			with open(sys.argv[2]) as myfile:
 				lines = myfile.readlines()
 			for email in lines:
+				os.system("killall -HUP tor")
 				print("\033[1;37mChecking email account " + email + " ...")
 				print("\033[1;37m------------------------------")
 				email = email[0:len(email) - 1]
