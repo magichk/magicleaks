@@ -34,7 +34,8 @@ print("\033[1;33;40m| |\/| | / _ \| |  _ | | |   | |   |  _|   / _ \ | ' /\___ \
 print("\033[1;33;40m| |  | |/ ___ \ |_| || | |___| |___| |___ / ___ \| . \ ___) |\33[00m")
 print("\033[1;33;40m|_|  |_/_/   \_\____|___\____|_____|_____/_/   \_\_|\_\____/ \33[00m")
 print("\033[1;33;40m                                                             \33[00m")
-print("\033[1;37;40m--> By Magichk and BinaryShadow                              \33[00m\n")
+print("\033[1;37;40m--> By Magichk                                               \33[00m")
+print("\033[1;37;40m--> Collaborators: BinaryShadow                              \33[00m\n")
 
 
 ######### Check Arguments
@@ -71,8 +72,13 @@ def check_email(email):
 	if (result):
 		if not onlyPasswords:
 			check_firefox_monitor(email)
+			print (" ")
 			check_pastebinLeaks(email)
+			print (" ")
 			emailreputation(email)
+			print (" ")
+			haveibeenpwned(email)
+			print (" ")
 		if (args.tor):
 			tor_main(email)
 	else:
@@ -86,7 +92,7 @@ def parse_firefox_monitor(response):
 	leaks = False
 	while start_breachName != -1:
 		leaks = True
-		print(detect_color +"Leak Detected!!!")
+		print(whiteB_color +"Leak Detected!!!")
 		start_breachName = start_breachName + 14
 		end_breachName = response.text.find("</span>", start_breachName)
 		print(red_color + "--> " + response.text[start_breachName:end_breachName])
@@ -145,8 +151,8 @@ def check_pastebinLeaks(email):
 
 	total = resp_json["count"]
 	if (total > 0):
-		print(detect_color + "This email account appears on pastebin in " + red_color + str(
-			total) +  detect_color + " results listed bellow:" + red_color)
+		print(whiteB_color + "This email account appears on pastebin in " + red_color + str(
+			total) +  whiteB_color + " results listed bellow:" + red_color)
 		cont = 0
 		while (cont <= (total - 1)):
 			link = "\thttps://pastebin.com/" + str(resp_json["data"][cont]["id"])
@@ -166,15 +172,48 @@ def emailreputation(email):
 		data_breach = emailreputation["details"]["data_breach"]
 		last_seen = emailreputation["details"]["last_seen"]
 		if (credentials_leaked == True or data_breach == True):
-			print(detect_color + "This email account has " + red_color + reputation + " reputation\n" +
-				detect_color + "Credentials leaked? " + red_color + str(
-				credentials_leaked) + detect_color + "\nHas data breach? " + red_color + str(data_breach) +
-				detect_color + "\nLast seen: " + red_color + str(last_seen))
+			print(whiteB_color + "This email account has " + red_color + reputation + " reputation\n" +
+				whiteB_color + "Credentials leaked? " + red_color + str(
+				credentials_leaked) + whiteB_color + "\nHas data breach? " + red_color + str(data_breach) +
+				whiteB_color + "\nLast seen: " + red_color + str(last_seen))
 		else:
 			print(gren_color + "This email account has " + reputation + " reputation\nCredentials leaked? " + str(
 				credentials_leaked) + "\nHas data breach? " + str(data_breach))
 	except:
 		print(red_color + "Error: " + emailreputation["reason"])
+
+
+#Search have I been pwned.
+def haveibeenpwned(email):
+	print(info_color + "--------------------\nChecking breaches on haveibeenpwned.com...\n--------------------")
+
+	email = email.replace("@","%40") #Replace @ with url encode character
+	url = "https://haveibeenpwned.com/unifiedsearch/" + email
+	headers = {
+		'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
+	client = requests.Session()
+	client.headers.update(headers)
+	response = client.get(url)
+	resp_json = json.loads(response.text)
+
+	inicio = 0
+	total = 0
+	while (inicio != -1):
+		inicio = response.text.find("BreachDate", inicio)
+		if (inicio != -1):
+			total = total + 1
+		inicio = response.text.find("BreachDate", inicio+1)
+
+	print(whiteB_color+"Total leaks detected in haveIbeenpwned: " + red_color + str(total))
+	cont = 0
+
+	while (cont < total):
+		print(red_color + "--> " + resp_json["Breaches"][cont]["Name"] + "\n\t- Breach Date:" + resp_json["Breaches"][cont]["BreachDate"]+"\n\t- Is Verified? "+ str(resp_json["Breaches"][cont]["IsVerified"]))
+		cont = cont + 1
+
+	if (total == 0):
+		print (gren_color + "No breaches detected in have I been pwned")
+
 
 
 ###### Tor leaks fonts
@@ -234,7 +273,7 @@ def tor_main(email):
 			if not passwords:
 				print (gren_color + "No leaks found" + normal_color)
 			for i in passwords:
-				print (detect_color + "This is a passwords leakeds for this email account: " + red_color + str(i) + normal_color)
+				print (whiteB_color + "This is a passwords leakeds for this email account: " + red_color + str(i) + normal_color)
 		else:
 			for i in passwords:
 				print (email+ ":" + str(i))
@@ -247,50 +286,50 @@ if __name__ == "__main__":
 	args = checkArgs()
 	onlyPasswords = args.onlyPasswords
 	if (args.tor):
-		tor_service = os.system("service tor status >> /dev/null")
-		if(tor_service != 0):
-			print(red_color + "Tor service no started. You need started this to execute this option.")
-			exit(1)
+	  tor_service = os.system("service tor status >> /dev/null")
+	  if(tor_service != 0):
+	    print(red_color + "Tor service no started. You need started this to execute this option.")
+	    exit(1)
 	else:
-		tor_proxy = None
+	  tor_proxy = None
 	if (args.email):
-			email = args.email
-			if (args.tor):
-				os.system("killall -HUP tor")
-			check_email(email)
+	    email = args.email
+	    if (args.tor):
+	      os.system("killall -HUP tor")
+	    check_email(email)
 	if (args.file):
-		try:
-			if  not onlyPasswords:
-				print(whiteB_color + "--->Reading file with email accounts...<---")
-			with open(sys.argv[2]) as myfile:
-				lines = myfile.readlines()
-			for email in lines:
-				os.system("killall -HUP tor")
-				email = email[0:len(email) - 1]
-				check_email(email)
-		except IOError:
-			print(red_color + "Error: The file not exist or bad format.")
+	  try:
+	    if  not onlyPasswords:
+	      print(whiteB_color + "--->Reading file with email accounts...<---")
+	    with open(sys.argv[2]) as myfile:
+	      lines = myfile.readlines()
+	    for email in lines:
+	      os.system("killall -HUP tor")
+	      email = email[0:len(email) - 1]
+	      check_email(email)
+	  except IOError:
+	    print(red_color + "Error: The file not exist or bad format.")
 	if (args.domain):
-		try:
-			if not args.tor:
-				print(red_color + "Error: This functionality need tor to work.")
-				exit(1)
-			domain = args.domain
-			if (domain[0] != '@'):
-				domain = '@' + domain
-			if  not onlyPasswords:
-				print(whiteB_color + "--->Searching email accounts leaks on " + domain + " domain...<---")
-			email_list = pwndb_main(domain, True)
-			if not email_list:
-				print(gren_color + "No leaks found for this domain" + normal_color)
-			elif onlyPasswords:
-				for line in email_list:
-					print(line)
-			else:
-				print(detect_color + "Found " + str(len(email_list)) + " accounts with leaks in selected domain: \n" +
-					red_color + ' || '.join(email_list))
-				for email in email_list:
-					os.system("killall -HUP tor")
-					check_email(email)
-		except IOError:
-			print(red_color + "Error: Unknow error.")
+	  try:
+	    if not args.tor:
+	      print(red_color + "Error: This functionality need tor to work.")
+	      exit(1)
+	    domain = args.domain
+	    if (domain[0] != '@'):
+	      domain = '@' + domain
+	    if  not onlyPasswords:
+	      print(whiteB_color + "--->Searching email accounts leaks on " + domain + " domain...<---")
+	    email_list = pwndb_main(domain, True)
+	    if not email_list:
+	      print(gren_color + "No leaks found for this domain" + normal_color)
+	    elif onlyPasswords:
+	      for line in email_list:
+	        print(line)
+	    else:
+	      print(whiteB_color + "Found " + str(len(email_list)) + " accounts with leaks in selected domain: \n" +
+	        red_color + ' || '.join(email_list))
+	      for email in email_list:
+	        os.system("killall -HUP tor")
+	        check_email(email)
+	  except IOError:
+	    print(red_color + "Error: Unknow error.")
