@@ -194,22 +194,27 @@ def haveibeenpwned(email):
 	client = requests.Session()
 	client.headers.update(headers)
 	response = client.get(url)
-	resp_json = json.loads(response.text)
 
-	inicio = 0
 	total = 0
-	while (inicio != -1):
-		inicio = response.text.find("BreachDate", inicio)
-		if (inicio != -1):
-			total = total + 1
-		inicio = response.text.find("BreachDate", inicio+1)
+	try:
+		resp_json = json.loads(response.text)
 
-	print(whiteB_color+"Total leaks detected in haveIbeenpwned: " + red_color + str(total))
-	cont = 0
+		inicio = 0
+		total = 0
+		while (inicio != -1):
+			inicio = response.text.find("BreachDate", inicio)
+			if (inicio != -1):
+				total = total + 1
+			inicio = response.text.find("BreachDate", inicio+1)
 
-	while (cont < total):
-		print(red_color + "--> " + resp_json["Breaches"][cont]["Name"] + "\n\t- Breach Date:" + resp_json["Breaches"][cont]["BreachDate"]+"\n\t- Is Verified? "+ str(resp_json["Breaches"][cont]["IsVerified"]))
-		cont = cont + 1
+		print(whiteB_color+"Total leaks detected in haveIbeenpwned: " + red_color + str(total))
+		cont = 0
+
+		while (cont < total):
+			print(red_color + "--> " + resp_json["Breaches"][cont]["Name"] + "\n\t- Breach Date:" + resp_json["Breaches"][cont]["BreachDate"]+"\n\t- Is Verified? "+ str(resp_json["Breaches"][cont]["IsVerified"]))
+			cont = cont + 1
+	except:
+		pass
 
 	if (total == 0):
 		print (gren_color + "No breaches detected in have I been pwned")
