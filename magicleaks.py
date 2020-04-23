@@ -207,7 +207,7 @@ def haveibeenpwned(email):
 				total = total + 1
 			inicio = response.text.find("BreachDate", inicio+1)
 
-		print(whiteB_color+"Total leaks detected in haveIbeenpwned: " + red_color + str(total))
+		print(whiteB_color+"Total leaks detected on haveIbeenpwned: " + red_color + str(total))
 		cont = 0
 
 		while (cont < total):
