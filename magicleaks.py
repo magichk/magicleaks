@@ -12,6 +12,8 @@ import os
 import subprocess
 import argparse
 import platform
+import urllib
+
 
 sistema = format(platform.system())
 
@@ -73,7 +75,10 @@ def checkArgs():
 	parser.add_argument('-oP', "--onlyPasswords", action="store_true",
 	                    help="Return only the ouput in format -> user@domain:password.")
 	parser.add_argument('-mD', "--makeDict", action="store_true",
-                            help="Make a Dictionary with some username masks, only works with -d or with -oP option")
+                        help="Make a Dictionary with some username masks, only works with -d or with -oP option")
+	parser.add_argument('-p', "--pgp", action="store_true",
+						dest='pgp',
+                        help="Obtain pgp key if exists")
 	args = parser.parse_args()
 	if (len(sys.argv)==1) or (args.tor==True and (not args.email and not args.file and not args.domain)):
 		parser.print_help(sys.stderr)
@@ -333,7 +338,7 @@ def thatsthem(email):
 	email = email.replace("@","%40") #Replace @ with url encode character
 	url = 'https://thatsthem.com/email/' + email
 	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
-	client = requests.Session()
+	client = requests.Session() #Make a Dictionary with some username masks, only works with -d or with -oP option
 	client.headers.update(headers)
 	response = client.get(url, proxies=None)
 
@@ -493,9 +498,60 @@ def makeDict(email):
 
 	nuevofichero.close()
 
+def searchpgp(email):
+	print(info_color + "--------------------\nChecking PGP key for this email account...\n--------------------")
+	email = email.replace("@","%40") #Replace @ with url encode character
+	url = 'http://keys.gnupg.net/pks/lookup?search='+email+'&fingerprint=on&op=index'
+	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
+	client = requests.Session() #Make a Dictionary with some username masks, only works with -d or with -oP option
+	client.headers.update(headers)
+	response = client.get(url, proxies=None)
+
+	inicio = response.text.find("href=")
+
+	found = 0
+
+	if (inicio != -1):
+		inicio = inicio + 6
+		fin = response.text.find("\"", inicio)
+		if (fin != -1):
+			print (green_color + "[+] PGP Key found!")
+			found = 1
+			link = response.text[inicio:fin]
+			link = link.replace("&amp;", "&")
+			url= "http://keys.gnupg.net" + link
+			client = requests.Session() #Make a Dictionary with some username masks, only works with -d or with -oP option
+			client.headers.update(headers)
+			#response = client.get(url, proxies=None).read()
+			get_page = urllib.request.urlopen(url)
+			response = get_page.readlines()
+
+
+
+			flag = 0
+
+			for line in response:
+				line = line.decode("utf-8")
+				line = line[0:len(line)-1]
+				line = str(line)
+				if (flag == 1):
+					inicio = line.find("pre>")
+					if (inicio != -1):
+						flag = 0
+					else:
+						print (red_color + line)
+				else:
+					inicio = line.find("pre>")
+					if (inicio != -1):
+						flag = flag + 1
+
+	if (found == 0):
+		print (green_color + "[+] No PGP Key found!")
+
 
 ########## Main function #################3
 if __name__ == "__main__":
+
 	flag = 0 #to check if it's necessary create a dict after.
 	args = checkArgs()
 	onlyPasswords = args.onlyPasswords
@@ -553,5 +609,8 @@ if __name__ == "__main__":
 				            os.system("killall -HUP tor")
 				            #check email
 				            check_email(email)
+
 		except IOError:
 		        	print(red_color + "Error: Unknow error.")
+	if (args.pgp):
+		searchpgp(email)

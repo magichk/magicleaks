@@ -15,6 +15,7 @@ You can install the dependencies using the requests.txt file:
     - Public Mail Records
     - Usersearch
     - Thatsthem
+    - PGP Public Keys search
     - pwndb2am4tzkvold.onion (Using tor service)
 
 ### Options available
