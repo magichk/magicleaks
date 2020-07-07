@@ -47,4 +47,5 @@ Initial support for Windows environments but this tool is make it for Linux envi
 
 ### Please, if this tool has been useful for you consider to donate 
 
-[![alt text](https://raw.githubusercontent.com/magichk/magicleaks/master/images/paypal.svg "Paypal")]: http://paypal.me/jmartinezcarbonell
+
+[![alt text](https://raw.githubusercontent.com/magichk/magicleaks/master/images/paypal.svg "Paypal")]( http://paypal.me/jmartinezcarbonell)
