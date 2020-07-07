@@ -43,3 +43,8 @@ The required file needs one email account per line.
 Initial support for Windows environments but this tool is make it for Linux environments.
 
 ![alt text](https://raw.githubusercontent.com/magichk/magicleaks/master/images/windows.png "MagicLeaks - Windows")
+
+
+### Please, if this tool has been useful for you consider to donate 
+
+[![alt text](https://raw.githubusercontent.com/magichk/magicleaks/master/images/paypal.svg "Paypal")]: http://paypal.me/jmartinezcarbonell

@@ -622,6 +622,8 @@ if __name__ == "__main__":
 				            os.system("killall -HUP tor")
 				            #check email
 				            check_email(email)
+			if (args.pgp):
+				searchpgp(email)
 
 		except IOError:
 		        	print(red_color + "Error: Unknow error.")
