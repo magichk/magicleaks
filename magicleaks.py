@@ -79,6 +79,10 @@ def checkArgs():
 	parser.add_argument('-p', "--pgp", action="store_true",
 						dest='pgp',
                         help="Obtain pgp key if exists")
+	parser.add_argument('-a', "--avast", action="store_true",
+						dest='avast',
+                        help="Check list of breaches in Avast service. NOTE: This service send a mail to the checked account")
+
 	args = parser.parse_args()
 	if (len(sys.argv)==1) or (args.tor==True and (not args.email and not args.file and not args.domain)):
 		parser.print_help(sys.stderr)
@@ -561,6 +565,24 @@ def gitlab(email):
 			print(whiteB_color + "It's possible that the user has the following Gitlab account: " + green_color + 'https://gitlab.com/users/'+str(user))
 
 
+def avast(email):
+	print(info_color + "--------------------\nSending an email with account leaks to "+ email + " with Avast service...\n--------------------")
+	url = "https://digibody.avast.com/v1/web/email/subscribe"
+	url2 = "https://digibody.avast.com/v1/web/leaks"
+
+	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5", "Accept": "application/json, text/plain, */*", "Referer": "https://www.avast.com/", "Origin": "https://www.avast.com"}
+	client = requests.Session()
+	client.headers.update(headers)
+	params = {"email": email}
+	response = client.post(url, json={"email": email})
+
+	response2 = client.post(url2, json={"email": email})
+
+	client.close()
+
+	print (green_color + "["+ red_color + "+" + green_color +"]" + whiteB_color + " Email send ok!")
+
+
 
 ########## Main function #################3
 if __name__ == "__main__":
@@ -585,6 +607,8 @@ if __name__ == "__main__":
 			if (sistema == "Linux"):
 				os.system("killall -HUP tor")
 		check_email(email)
+		if (args.avast):
+			avast(email)
 	if (args.file):
 		try:
 			if  not onlyPasswords:

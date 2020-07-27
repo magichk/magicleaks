@@ -17,6 +17,7 @@ You can install the dependencies using the requests.txt file:
     - Thatsthem
     - PGP Public Keys search
     - pwndb2am4tzkvold.onion (Using tor service)
+    - Avast Hack Check (Take care, this service send an email to the account checked)
 
 ### Options available
 ![alt text](https://raw.githubusercontent.com/magichk/magicleaks/master/images/magicleaks-menu.png "MagicLeaks - menu")
