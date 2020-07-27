@@ -81,7 +81,7 @@ def checkArgs():
                         help="Obtain pgp key if exists")
 	parser.add_argument('-a', "--avast", action="store_true",
 						dest='avast',
-                        help="Check list of breaches in Avast service. NOTE: This service send a mail to the checked account")
+                        help="Check list of breaches in Avast service. NOTE: Take care, this service send an email to the checked account")
 
 	args = parser.parse_args()
 	if (len(sys.argv)==1) or (args.tor==True and (not args.email and not args.file and not args.domain)):
