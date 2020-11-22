@@ -14,6 +14,7 @@ You can install the dependencies using the requests.txt file:
     - Have I Been Pwned
     - Public Mail Records
     - Usersearch
+    - Social network Search like instagram, github and more
     - Thatsthem
     - PGP Public Keys search
     - pwndb2am4tzkvold.onion (Using tor service)
@@ -50,6 +51,6 @@ Initial support for Windows environments but this tool is make it for Linux envi
 
 
 
-### Please, if this tool has been useful for you consider to donate 
+### Please, if this tool has been useful for you consider to donate
 
 [![Foo](https://raw.githubusercontent.com/magichk/magicleaks/master/images/paypal.png)](http://paypal.me/jmartinezcarbonell)

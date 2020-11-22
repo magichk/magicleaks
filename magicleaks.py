@@ -21,6 +21,9 @@ sistema = format(platform.system())
 # proxy
 tor_proxy = {'http': 'socks5h://127.0.0.1:9050', 'https': 'socks5h://127.0.0.1:9050'}
 
+#Nombre de la persona que analizamos.
+nombre = "" 
+
 
 if (sistema == "Linux"):
 	# Text colors
@@ -109,7 +112,7 @@ def check_email(email):
 				sistema = format(platform.system())
 				#Have I been pwned only works with linux systems now.
 				if (sistema == "Linux"):
-        	                        haveibeenpwned(email)
+					haveibeenpwned(email)
 				print (" ")
 			except:
 				pass
@@ -119,9 +122,12 @@ def check_email(email):
 
 		#Search this user in possible social media accounts
 		try:
+			print(info_color + "--------------------\nChecking social media possible accounts for this email address ...\n--------------------")
 			thatsthem(email)
 			publicemailrecords(email)
 			usersearch(email)
+			gitlab(email)
+			picuki(email)
 		except:
 			pass
 
@@ -318,7 +324,7 @@ def usersearch(email):
 	fin = email.find("@")
 	user = email[0:fin]
 
-	print(info_color + "--------------------\nChecking social media possible accounts for this email address in usersearch.org ...\n--------------------")
+	#print(info_color + "--------------------\nChecking social media possible accounts for this email address in usersearch.org ...\n--------------------")
 
 	url = 'https://usersearch.org/results_normal.php'
 	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
@@ -337,7 +343,7 @@ def usersearch(email):
 				print(whiteB_color + "It's possible that the user has the following social media account: " + green_color + socialmedia)
 		inicio = response.text.find('<div class="results-button-wrapper"', fin)
 
-	gitlab(email)
+
 
 def thatsthem(email):
 	email = email.replace("@","%40") #Replace @ with url encode character
@@ -582,6 +588,32 @@ def avast(email):
 
 	print (green_color + "["+ red_color + "+" + green_color +"]" + whiteB_color + " Email send ok!")
 
+
+def picuki(email):
+	fin = email.find("@")
+	user = email[0:fin]
+
+	url = 'https://www.picuki.com/profile/' + user
+	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
+	client = requests.Session()
+	client.headers.update(headers)
+	response = client.get(url, proxies=None)
+
+
+	inicio = response.text.find("profile-name-top")
+	if (inicio != -1):
+		print(whiteB_color + "It's possible that the user has the following picuki account: " + green_color + 'https://www.picuki.com/profile/'+str(user))
+		print(whiteB_color + "It's possible that the user has the following instagram account: " + green_color + 'https://www.instagram.com/'+str(user))
+		print ("")
+
+	inicio = response.text.find("profile-name-bottom")
+	if (inicio != -1):
+		inicio = response.text.find(">", inicio)
+		if (inicio != -1):
+			inicio = inicio + 1
+			fin = response.text.find("<", inicio)
+			if (fin != -1):
+				print (whiteB_color + "The name of this user is: " + green_color + response.text[inicio:fin])
 
 
 ########## Main function #################3
