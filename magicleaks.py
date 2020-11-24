@@ -22,7 +22,7 @@ sistema = format(platform.system())
 tor_proxy = {'http': 'socks5h://127.0.0.1:9050', 'https': 'socks5h://127.0.0.1:9050'}
 
 #Nombre de la persona que analizamos.
-nombre = "" 
+nombre = ""
 
 
 if (sistema == "Linux"):
@@ -113,6 +113,8 @@ def check_email(email):
 				#Have I been pwned only works with linux systems now.
 				if (sistema == "Linux"):
 					haveibeenpwned(email)
+				print (" ")
+				haveibeensold(email)
 				print (" ")
 			except:
 				pass
@@ -614,6 +616,26 @@ def picuki(email):
 			fin = response.text.find("<", inicio)
 			if (fin != -1):
 				print (whiteB_color + "The name of this user is: " + green_color + response.text[inicio:fin])
+
+
+def haveibeensold(email):
+	fin = email.find("@")
+
+	print(info_color + "--------------------\nChecking haveibeensold.app service...\n--------------------")
+
+	url = 'https://haveibeensold.app/api/api.php'
+	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
+	client = requests.Session()
+	client.headers.update(headers)
+	params = {"email": email, "action": "check"}
+	response = client.post(url, params, proxies=tor_proxy)
+
+	inicio = response.text.find('"data":[]')
+	if (inicio != -1):
+		print(green_color + "[+] This email account is not on any sold list we are currently aware of!")
+	else:
+		print(red_color + "[-] This email account is on a list of accounts that are sold")
+
 
 
 ########## Main function #################3
