@@ -122,8 +122,6 @@ def check_email(email):
 			tor_main(email)
 			print (" ")
 
-		leakpeek(email)
-		print (" ")
 
 		#Search this user in possible social media accounts
 		try:
