@@ -122,6 +122,9 @@ def check_email(email):
 			tor_main(email)
 			print (" ")
 
+		leakpeek(email)
+		print (" ")
+
 		#Search this user in possible social media accounts
 		try:
 			print(info_color + "--------------------\nChecking social media possible accounts for this email address ...\n--------------------")
@@ -628,14 +631,13 @@ def haveibeensold(email):
 	client = requests.Session()
 	client.headers.update(headers)
 	params = {"email": email, "action": "check"}
-	response = client.post(url, params, proxies=tor_proxy)
+	response = client.post(url, params)
 
 	inicio = response.text.find('"data":[]')
 	if (inicio != -1):
 		print(green_color + "[+] This email account is not on any sold list we are currently aware of!")
 	else:
 		print(red_color + "[-] This email account is on a list of accounts that are sold")
-
 
 
 ########## Main function #################3
