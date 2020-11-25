@@ -644,7 +644,7 @@ def haveibeensold(email):
 def leakpeek(email):
 	fin = email.find("@")
 
-	print(info_color + "--------------------\nChecking leapeak.com service...\n--------------------")
+	print(info_color + "--------------------\nChecking leapeek.com service...\n--------------------")
 
 	url = 'https://leakpeek.com/'
 	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
