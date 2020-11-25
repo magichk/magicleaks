@@ -122,9 +122,11 @@ def check_email(email):
 		if (args.tor):
 			tor_main(email)
 			print (" ")
-
-		leakpeek(email)
-		print (" ")
+		try:
+			leakpeek(email)
+			print (" ")
+		except:
+			pass
 
 		#Search this user in possible social media accounts
 		try:
@@ -654,7 +656,7 @@ def leakpeek(email):
 
 	url = 'https://leakpeek.com/inc/iap3?t=1606297345&input=' + email
 	response2 = client.get(url)
-
+	
 	myjson = json.loads(response2.text)
 
 	flag = 0
