@@ -17,6 +17,7 @@ You can install the dependencies using the requests.txt file:
     - Social network Search like instagram, github and more
     - Thatsthem
     - haveibeensold.app
+    - leakpeek
     - PGP Public Keys search
     - pwndb2am4tzkvold.onion (Using tor service)
     - Avast Hack Check (Take care, this service send an email to the account checked)

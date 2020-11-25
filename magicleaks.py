@@ -13,6 +13,7 @@ import subprocess
 import argparse
 import platform
 import urllib
+import base64 # for leakpeek
 
 
 sistema = format(platform.system())
@@ -122,6 +123,8 @@ def check_email(email):
 			tor_main(email)
 			print (" ")
 
+		leakpeek(email)
+		print (" ")
 
 		#Search this user in possible social media accounts
 		try:
@@ -636,6 +639,44 @@ def haveibeensold(email):
 		print(green_color + "[+] This email account is not on any sold list we are currently aware of!")
 	else:
 		print(red_color + "[-] This email account is on a list of accounts that are sold")
+
+
+def leakpeek(email):
+	fin = email.find("@")
+
+	print(info_color + "--------------------\nChecking leapeak.com service...\n--------------------")
+
+	url = 'https://leakpeek.com/'
+	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
+	client = requests.Session()
+	client.headers.update(headers)
+	response = client.get(url)
+
+	url = 'https://leakpeek.com/inc/iap3?t=1606297345&input=' + email
+	response2 = client.get(url)
+
+	myjson = json.loads(response2.text)
+
+	flag = 0
+
+	for object in myjson:
+		if (object == "found"):
+			if (myjson[object] != None):
+				print (green_color+"[" + whiteB_color + "+" + green_color + "]" + whiteB_color + " Total of leaked passwords found: " + red_color + str(myjson[object]))
+
+				for object in myjson["result"]:
+					b64pass = object["password"]
+					base64_bytes = b64pass.encode('ascii')
+					message_bytes = base64.b64decode(base64_bytes)
+					password = message_bytes.decode('ascii')
+					print (whiteB_color + "This is a password leaked for this email account: " + red_color + str(password) + normal_color)
+
+				flag = 1
+
+	if (flag == 0):
+		print (green_color+"[" + whiteB_color + "-" + green_color + "] No leaked passwords for this email account in leakpeek.com!")
+
+
 
 
 ########## Main function #################3
