@@ -13,6 +13,7 @@ import subprocess
 import argparse
 import platform
 import urllib
+import base64 # for leakpeek
 
 
 sistema = format(platform.system())
@@ -20,6 +21,9 @@ sistema = format(platform.system())
 ######## Global variables
 # proxy
 tor_proxy = {'http': 'socks5h://127.0.0.1:9050', 'https': 'socks5h://127.0.0.1:9050'}
+
+#Nombre de la persona que analizamos.
+nombre = ""
 
 
 if (sistema == "Linux"):
@@ -79,6 +83,10 @@ def checkArgs():
 	parser.add_argument('-p', "--pgp", action="store_true",
 						dest='pgp',
                         help="Obtain pgp key if exists")
+	parser.add_argument('-a', "--avast", action="store_true",
+						dest='avast',
+                        help="Check list of breaches in Avast service. NOTE: Take care, this service send an email to the checked account")
+
 	args = parser.parse_args()
 	if (len(sys.argv)==1) or (args.tor==True and (not args.email and not args.file and not args.domain)):
 		parser.print_help(sys.stderr)
@@ -105,19 +113,29 @@ def check_email(email):
 				sistema = format(platform.system())
 				#Have I been pwned only works with linux systems now.
 				if (sistema == "Linux"):
-        	                        haveibeenpwned(email)
+					haveibeenpwned(email)
+				print (" ")
+				haveibeensold(email)
 				print (" ")
 			except:
 				pass
 		if (args.tor):
 			tor_main(email)
 			print (" ")
+		try:
+			leakpeek(email)
+			print (" ")
+		except:
+			pass
 
 		#Search this user in possible social media accounts
 		try:
+			print(info_color + "--------------------\nChecking social media possible accounts for this email address ...\n--------------------")
 			thatsthem(email)
 			publicemailrecords(email)
 			usersearch(email)
+			gitlab(email)
+			picuki(email)
 		except:
 			pass
 
@@ -314,7 +332,7 @@ def usersearch(email):
 	fin = email.find("@")
 	user = email[0:fin]
 
-	print(info_color + "--------------------\nChecking social media possible accounts for this email address in usersearch.org ...\n--------------------")
+	#print(info_color + "--------------------\nChecking social media possible accounts for this email address in usersearch.org ...\n--------------------")
 
 	url = 'https://usersearch.org/results_normal.php'
 	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
@@ -333,7 +351,7 @@ def usersearch(email):
 				print(whiteB_color + "It's possible that the user has the following social media account: " + green_color + socialmedia)
 		inicio = response.text.find('<div class="results-button-wrapper"', fin)
 
-	gitlab(email)
+
 
 def thatsthem(email):
 	email = email.replace("@","%40") #Replace @ with url encode character
@@ -561,6 +579,107 @@ def gitlab(email):
 			print(whiteB_color + "It's possible that the user has the following Gitlab account: " + green_color + 'https://gitlab.com/users/'+str(user))
 
 
+def avast(email):
+	print(info_color + "--------------------\nSending an email with account leaks to "+ email + " with Avast service...\n--------------------")
+	url = "https://digibody.avast.com/v1/web/email/subscribe"
+	url2 = "https://digibody.avast.com/v1/web/leaks"
+
+	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5", "Accept": "application/json, text/plain, */*", "Referer": "https://www.avast.com/", "Origin": "https://www.avast.com"}
+	client = requests.Session()
+	client.headers.update(headers)
+	params = {"email": email}
+	response = client.post(url, json={"email": email})
+
+	response2 = client.post(url2, json={"email": email})
+
+	client.close()
+
+	print (green_color + "["+ red_color + "+" + green_color +"]" + whiteB_color + " Email send ok!")
+
+
+def picuki(email):
+	fin = email.find("@")
+	user = email[0:fin]
+
+	url = 'https://www.picuki.com/profile/' + user
+	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
+	client = requests.Session()
+	client.headers.update(headers)
+	response = client.get(url, proxies=None)
+
+
+	inicio = response.text.find("profile-name-top")
+	if (inicio != -1):
+		print(whiteB_color + "It's possible that the user has the following picuki account: " + green_color + 'https://www.picuki.com/profile/'+str(user))
+		print(whiteB_color + "It's possible that the user has the following instagram account: " + green_color + 'https://www.instagram.com/'+str(user))
+		print ("")
+
+	inicio = response.text.find("profile-name-bottom")
+	if (inicio != -1):
+		inicio = response.text.find(">", inicio)
+		if (inicio != -1):
+			inicio = inicio + 1
+			fin = response.text.find("<", inicio)
+			if (fin != -1):
+				print (whiteB_color + "The name of this user is: " + green_color + response.text[inicio:fin])
+
+
+def haveibeensold(email):
+	fin = email.find("@")
+
+	print(info_color + "--------------------\nChecking haveibeensold.app service...\n--------------------")
+
+	url = 'https://haveibeensold.app/api/api.php'
+	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
+	client = requests.Session()
+	client.headers.update(headers)
+	params = {"email": email, "action": "check"}
+	response = client.post(url, params)
+
+	inicio = response.text.find('"data":[]')
+	if (inicio != -1):
+		print(green_color + "[+] This email account is not on any sold list we are currently aware of!")
+	else:
+		print(red_color + "[-] This email account is on a list of accounts that are sold")
+
+
+def leakpeek(email):
+	fin = email.find("@")
+
+	print(info_color + "--------------------\nChecking leapeek.com service...\n--------------------")
+
+	url = 'https://leakpeek.com/'
+	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
+	client = requests.Session()
+	client.headers.update(headers)
+	response = client.get(url)
+
+	url = 'https://leakpeek.com/inc/iap3?t=1606297345&input=' + email
+	response2 = client.get(url)
+	
+	myjson = json.loads(response2.text)
+
+	flag = 0
+
+	for object in myjson:
+		if (object == "found"):
+			if (myjson[object] != None):
+				print (green_color+"[" + whiteB_color + "+" + green_color + "]" + whiteB_color + " Total of leaked passwords found: " + red_color + str(myjson[object]))
+
+				for object in myjson["result"]:
+					b64pass = object["password"]
+					base64_bytes = b64pass.encode('ascii')
+					message_bytes = base64.b64decode(base64_bytes)
+					password = message_bytes.decode('ascii')
+					print (whiteB_color + "This is a password leaked for this email account: " + red_color + str(password) + normal_color)
+
+				flag = 1
+
+	if (flag == 0):
+		print (green_color+"[" + whiteB_color + "-" + green_color + "] No leaked passwords for this email account in leakpeek.com!")
+
+
+
 
 ########## Main function #################3
 if __name__ == "__main__":
@@ -585,6 +704,8 @@ if __name__ == "__main__":
 			if (sistema == "Linux"):
 				os.system("killall -HUP tor")
 		check_email(email)
+		if (args.avast):
+			avast(email)
 	if (args.file):
 		try:
 			if  not onlyPasswords:
