@@ -354,56 +354,56 @@ def usersearch(email):
 
 
 def thatsthem(email):
-	email = email.replace("@","%40") #Replace @ with url encode character
-	url = 'https://thatsthem.com/email/' + email
+	#email = email.replace("@","%40") #Replace @ with url encode character
+	url = 'https://thatsthem.com/'
+	url1 = 'https://thatsthem.com/email/' + email
 	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
-	client = requests.Session() #Make a Dictionary with some username masks, only works with -d or with -oP option
+	client = requests.Session()
 	client.headers.update(headers)
 	response = client.get(url, proxies=None)
+	response = client.get(url1, proxies=None)
 
-	flag = 0
 	inicio = 0
-	while (flag < 3):
-		inicio = response.text.find('<span itemprop="name">', inicio+1)
-		flag = flag + 1
-
-	inicio = response.text.find('<span itemprop="name">', inicio+1)
-	if (inicio != -1):
-		inicio = response.text.find(">",inicio)
-		fin = response.text.find("</", inicio)
-		if (fin != -1):
-			owner = response.text[inicio+1:fin]
-
-	inicio = response.text.find('itemprop="streetAddress">')
+	flag = 0
+	inicio = response.text.find('class="web"')
 	if (inicio != -1):
 		inicio = response.text.find(">", inicio)
-		fin = response.text.find("<", inicio)
+		inicio = inicio + 1
+		fin = response.text.find("</a>", inicio)
 		if (fin != -1):
-			address = response.text[inicio+1:fin]
+			owner = response.text[inicio:fin]
 
-
-	inicio = response.text.find('itemprop="addressLocality">')
+	inicio = response.text.find('<span class="street">')
 	if (inicio != -1):
 		inicio = response.text.find(">", inicio)
-		fin = response.text.find("<", inicio)
+		inicio = inicio + 1
+		fin = response.text.find("</span>", inicio)
 		if (fin != -1):
-			city = response.text[inicio+1:fin]
+			address = response.text[inicio:fin]
 
-	inicio = response.text.find('itemprop="postalCode">')
+	inicio = response.text.find('<span class="city">')
 	if (inicio != -1):
-                inicio = response.text.find(">", inicio)
-                fin = response.text.find("<", inicio)
-                if (fin != -1):
-                        postalcode = response.text[inicio+1:fin]
-                        print(info_color + "--------------------\nChecking personal information about this email account in thatsthem.com ...\n--------------------")
-                        print(green_color + "The owner of this email account is: " + owner)
-                        print(green_color + "The location of " + owner + " is: " + address + " from " + city + ", " + str(postalcode))
-                        print(" ")
+		inicio = response.text.find(">", inicio)
+		inicio = inicio + 1
+		fin = response.text.find("</span>", inicio)
+		if (fin != -1):
+			city = response.text[inicio:fin]
 
+	inicio = response.text.find('telephone')
+	if (inicio != -1):
+		inicio = inicio + 13
+		fin = response.text.find('"', inicio)
+		if (fin != -1):
+			phone = response.text[inicio:fin]
 
-
-
-
+	try:
+		print(info_color + "--------------------\nChecking personal information about this email account in thatsthem.com ...\n--------------------")
+		print(green_color + "The owner of this email account is: " + owner)
+		print(green_color + "The location of " + owner + " is: " + address + " from " + city)
+		print(green_color + "This is a phone from " + owner + " : " + str(phone))
+		print(" ")
+	except:
+		pass
 
 ###### Tor leaks fonts
 def pwndb_main(source, is_domain):
@@ -656,7 +656,7 @@ def leakpeek(email):
 
 	url = 'https://leakpeek.com/inc/iap3?t=1606297345&input=' + email
 	response2 = client.get(url)
-	
+
 	myjson = json.loads(response2.text)
 
 	flag = 0
