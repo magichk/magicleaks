@@ -14,6 +14,12 @@ import argparse
 import platform
 import urllib
 import base64 # for leakpeek
+try:
+	from googlesearch import search
+except ImportError:
+	print("No module named 'google' found")
+from fpdf import FPDF
+import numpy as np
 
 
 sistema = format(platform.system())
@@ -22,8 +28,26 @@ sistema = format(platform.system())
 # proxy
 tor_proxy = {'http': 'socks5h://127.0.0.1:9050', 'https': 'socks5h://127.0.0.1:9050'}
 
+##Global variables
+
 #Nombre de la persona que analizamos.
-nombre = ""
+owner = ""
+phone = ""
+address = ""
+
+#Variables para imprimir en el informe (en caso de ser necesario)
+firefoxmonitor = list()
+firefoxmonitor.append(["Source","Date","Compromised Data"])
+
+passwords_list= list()
+passwords_list.append(["Source", "Password"])
+
+socialmedia_list = list()
+
+passwords_company_list = list()
+passwords_company_list.append(["Email", "Password"])
+
+###################
 
 
 if (sistema == "Linux"):
@@ -64,7 +88,7 @@ print(banner_color+"--> Collaborators: BinaryShadow                             
 ######### Check Arguments
 def checkArgs():
 	parser = argparse.ArgumentParser()
-	parser = argparse.ArgumentParser(description=red_color + 'MagicLeaks 1.0\n' + info_color)
+	parser = argparse.ArgumentParser(description=red_color + 'MagicLeaks 2.0\n' + info_color)
 	parser.add_argument('-e', "--email", action="store",
 						dest='email',
 	                    help="Email address to search.")
@@ -76,6 +100,8 @@ def checkArgs():
 	                    help="Domain to search email leaks")
 	parser.add_argument('-t', "--tor", action="store_true",
 	                    help="Use Tor to search leaks in onion sites, need also set the domain or file.")
+	parser.add_argument("--pdf", action="store_true",
+			    help="Generate a report from results in PDF file")
 	parser.add_argument('-oP', "--onlyPasswords", action="store_true",
 	                    help="Return only the ouput in format -> user@domain:password.")
 	parser.add_argument('-mD', "--makeDict", action="store_true",
@@ -135,6 +161,7 @@ def check_email(email):
 			publicemailrecords(email)
 			usersearch(email)
 			gitlab(email)
+			github(email)
 			picuki(email)
 		except:
 			pass
@@ -146,13 +173,19 @@ def check_email(email):
 
 
 def parse_firefox_monitor(response):
+    global firefoxmonitor
     start_breachName = response.text.find("breach-title")
     leaks = False
+    date=""
+    compromised_data=""
+    flag = 0
+
     while start_breachName != -1:
         leaks = True
         print(whiteB_color +"Leak Detected!!!")
         start_breachName = start_breachName + 14
         end_breachName = response.text.find("</span>", start_breachName)
+        service = response.text[start_breachName:end_breachName]
         print(red_color + "--> " + response.text[start_breachName:end_breachName])
         end_key = end_breachName
         start_index = response.text.find("breach-key", end_key) + 12
@@ -163,11 +196,21 @@ def parse_firefox_monitor(response):
             value = response.text[start_index:end_index]
             key = response.text[start_key:end_key]
             print("\t\t- " + value + " " + key)
+            if (flag == 0):
+            	date=key
+            	flag = 1
+            else:
+            	compromised_data = key
+            	flag = 0
+
             start_index = response.text.find("breach-key", end_key) + 12
         start_breachName = response.text.find("breach-title", end_breachName)
+        firefoxmonitor.append([service,date,compromised_data])
+
+
     if not leaks:
         print(green_color + "This email account not appears on Firefox Monitor")
-
+    return firefoxmonitor
 
 def check_firefox_monitor(email):
     print(info_color + "--------------------\nChecking on Firefox Monitor...\n--------------------")
@@ -278,6 +321,8 @@ def haveibeenpwned(email):
 
 #Search account into publicemailrecords.
 def publicemailrecords(email):
+	global owner
+	global address
 	flag = 0
 	url = 'http://publicemailrecords.com/find_emails'
 	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
@@ -324,6 +369,8 @@ def publicemailrecords(email):
 		print(green_color + "The owner of this email account is: " + owner)
 		print(green_color + "The location of " + owner + " is: " + address)
 		print(" ")
+		google(owner,email)
+		print ("")
 
 	client.close()
 
@@ -349,11 +396,14 @@ def usersearch(email):
 			if (fin != -1):
 				socialmedia = response.text[inicio:fin-2]
 				print(whiteB_color + "It's possible that the user has the following social media account: " + green_color + socialmedia)
+				socialmedia_list.append([socialmedia])
 		inicio = response.text.find('<div class="results-button-wrapper"', fin)
 
 
 
 def thatsthem(email):
+	global owner
+	global phone
 	#email = email.replace("@","%40") #Replace @ with url encode character
 	url = 'https://thatsthem.com/'
 	url1 = 'https://thatsthem.com/email/' + email
@@ -398,10 +448,13 @@ def thatsthem(email):
 
 	try:
 		print(info_color + "--------------------\nChecking personal information about this email account in thatsthem.com ...\n--------------------")
-		print(green_color + "The owner of this email account is: " + owner)
+		if (owner):
+			print(green_color + "The owner of this email account is: " + owner)
 		print(green_color + "The location of " + owner + " is: " + address + " from " + city)
 		print(green_color + "This is a phone from " + owner + " : " + str(phone))
 		print(" ")
+		google(owner,email)
+		print ("")
 	except:
 		pass
 
@@ -463,6 +516,7 @@ def tor_main(email):
 				print (green_color + "No leaks found" + normal_color)
 			for i in passwords:
 				print (whiteB_color + "This is a password leaked for this email account: " + red_color + str(i) + normal_color)
+				passwords_list.append(["TOR",i])
 				if (args.makeDict):
 					makeDict(email+":"+str(i))
 		else:
@@ -520,29 +574,32 @@ def makeDict(email):
 def searchpgp(email):
 	print(info_color + "--------------------\nChecking PGP key for this email account...\n--------------------")
 	email = email.replace("@","%40") #Replace @ with url encode character
-	url = 'http://keys.gnupg.net/pks/lookup?search='+email+'&fingerprint=on&op=index'
+	url = 'https://pgp.surfnet.nl/pks/lookup?search='+email+'&fingerprint=on&op=index'
 	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
 	client = requests.Session() #Make a Dictionary with some username masks, only works with -d or with -oP option
 	client.headers.update(headers)
-	response = client.get(url, proxies=None)
+	response = client.get(url, proxies=None,timeout=90)
 
-	inicio = response.text.find("href=")
+	inicio = response.text.find("op=get")
 
 	found = 0
 
 	if (inicio != -1):
+		inicio = response.text.find("href=")
 		inicio = inicio + 6
 		fin = response.text.find("\"", inicio)
 		if (fin != -1):
 			print (green_color + "[+] PGP Key found!")
+			print ("")
 			found = 1
 			link = response.text[inicio:fin]
 			link = link.replace("&amp;", "&")
-			url= "http://keys.gnupg.net" + link
+			url= "https://pgp.surfnet.nl" + link
 			client = requests.Session() #Make a Dictionary with some username masks, only works with -d or with -oP option
 			client.headers.update(headers)
 			get_page = urllib.request.urlopen(url)
 			response = get_page.readlines()
+
 
 			flag = 0
 
@@ -565,6 +622,7 @@ def searchpgp(email):
 		print (green_color + "[+] No PGP Key found!")
 
 def gitlab(email):
+	global owner
 	fin = email.find("@")
 	user = email[0:fin]
 
@@ -577,7 +635,24 @@ def gitlab(email):
 		inicio = obj.find(b"true")
 		if (inicio != -1):
 			print(whiteB_color + "It's possible that the user has the following Gitlab account: " + green_color + 'https://gitlab.com/users/'+str(user))
+			url = "https://gitlab.com/users/" + str(user)
+			client = requests.Session()
+			client.headers.update(headers)
+			get_page = urllib.request.urlopen(url)
+			response = get_page.readlines()
 
+			for line in response:
+				line = line.decode("utf-8")
+				inicio = line.find('property="og:title"')
+				if (inicio != -1):
+				    inicio = line.find("content=")
+				    if (inicio != -1):
+				        inicio = inicio + 9
+				        fin = line.find("\"", inicio)
+				        if (fin != -1):
+				            owner = line[inicio:fin]
+				            google(owner,email)
+				            socialmedia_list.append([url])
 
 def avast(email):
 	print(info_color + "--------------------\nSending an email with account leaks to "+ email + " with Avast service...\n--------------------")
@@ -598,6 +673,7 @@ def avast(email):
 
 
 def picuki(email):
+	global owner
 	fin = email.find("@")
 	user = email[0:fin]
 
@@ -621,7 +697,9 @@ def picuki(email):
 			inicio = inicio + 1
 			fin = response.text.find("<", inicio)
 			if (fin != -1):
-				print (whiteB_color + "The name of this user is: " + green_color + response.text[inicio:fin])
+				owner = response.text[inicio:fin]
+				print (whiteB_color + "The name of this user is: " + green_color + owner)
+				google(owner, email)
 
 
 def haveibeensold(email):
@@ -644,9 +722,10 @@ def haveibeensold(email):
 
 
 def leakpeek(email):
+	global passwords_list
 	fin = email.find("@")
 
-	print(info_color + "--------------------\nChecking leapeek.com service...\n--------------------")
+	print(info_color + "--------------------\nChecking leakpeek.com service...\n--------------------")
 
 	url = 'https://leakpeek.com/'
 	headers = {'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
@@ -672,13 +751,254 @@ def leakpeek(email):
 					message_bytes = base64.b64decode(base64_bytes)
 					password = message_bytes.decode('ascii')
 					print (whiteB_color + "This is a password leaked for this email account: " + red_color + str(password) + normal_color)
+					passwords_list.append(["LeakPeek", password])
 
 				flag = 1
 
 	if (flag == 0):
 		print (green_color+"[" + whiteB_color + "-" + green_color + "] No leaked passwords for this email account in leakpeek.com!")
 
+def github(email):
+	global owner
+	fin = email.find("@")
+	name = email[0:fin]
+	name = name.replace(".","")
+	print ("")
+	print(info_color + "--------------------\nSearching user in github.com...\n--------------------")
 
+	url = 'https://github.com/' + name
+	get_page = urllib.request.urlopen(url)
+	response = get_page.readlines()
+
+	flag = 0
+
+	for line in response:
+		line = line.decode("utf-8")
+
+		if (flag == 1):
+			owner = line.strip()
+			print(whiteB_color + "Github repository: " + green_color + url)
+			socialmedia_list.append([url])
+			if owner:
+				print(whiteB_color + "The owner of this email account is: " + green_color + owner)
+			flag = 0
+
+		inicio = line.find('itemprop="name"')
+		if (inicio != -1):
+			flag = 1 #Next line is the line that contains Name
+
+		#Obtain company
+		inicio = line.find('class="p-org"')
+		if (inicio != -1):
+			inicio = line.find("<div>", inicio)
+			inicio = inicio + 5
+			fin = line.find("</div>", inicio)
+			if (fin != -1):
+				company = line[inicio:fin]
+				cleanr = re.compile('<.*?>')
+				company = re.sub(cleanr, '', company)
+				print(whiteB_color + "Company: " + green_color + company)
+
+		inicio = line.find('rel="nofollow me" class="Link--primary')
+		if (inicio != -1):
+			inicio = line.find("href")
+			if (inicio != -1):
+				inicio = inicio + 6
+				fin = line.find('"', inicio)
+				link = line[inicio:fin]
+				print (green_color + "["+red_color+"+"+green_color+"]"+whiteB_color+" Link found: " + green_color + link)
+				socialmedia_list.append([link])
+
+	if owner:
+		google(owner, email)
+
+def google(query,email):
+    global socialmedia_list
+    print (info_color + "--------------------\nSearching in Google: " + query + "...\n--------------------")
+    inicio = email.find("@")
+    fin = email.find(".", inicio)
+    tld = email[inicio+1:fin]
+    flag = 0
+    if tld in "gmail, hotmail, protonmail":
+    	tld2 = tld
+    	tld=""
+    	flag = 1
+
+    query = query + " " + tld
+    for j in search(query, tld="co.in", num=4, stop=4, pause=2):
+        print(green_color + "["+red_color+"+"+green_color+"]"+whiteB_color+" Link Found: " + green_color+j)
+        socialmedia_list.append([j])
+    #if (flag == 1):
+    #	for j in search(query+" "+tld2, tld="co.in", num=4, stop=4, pause=2):
+    #		print(green_color + "["+red_color+"+"+green_color+"]"+whiteB_color+" Link Found: " + green_color+j)
+
+
+
+def generateuserpdf(email):
+	global firefoxmonitor
+	global owner
+	global address
+	global passwords
+	global socialmedia_list
+
+	print (info_color + "--------------------\nGenerating PDF File with results...\n--------------------")
+	pdf = FPDF()
+	pdf.add_page()
+	#Header
+	pdf.set_font('Helvetica', 'B', 8)
+	pdf.cell(130)
+	pdf.cell(60,1,'Magicleaks 2.0',0,0,'R')
+	pdf.ln(20)
+
+	#Title
+	pdf.set_font('Helvetica', 'B', 12)
+	pdf.cell(40, 10, 'Email account analyzed: ' + email)
+	pdf.ln(10)
+
+	#Owner
+	if (owner):
+		pdf.set_font('Helvetica', 'B', 10)
+		pdf.cell(40, 10, 'User Owner: ' + owner)
+		pdf.ln(10)
+
+	if (phone):
+		pdf.set_font('Helvetica', '', 10)
+		pdf.cell(40, 10, 'Phone: ' + str(phone))
+		pdf.ln(10)
+
+	if (address):
+		pdf.set_font('Helvetica', '', 10)
+		pdf.cell(40, 10, 'Address: ' + address)
+		pdf.ln(10)
+
+	#################################
+	#Body
+	#################################
+	#Firefox Monitor
+	#################################
+
+	# Effective page width, or just epw
+	epw = pdf.w - 2*pdf.l_margin
+
+	col_width = epw/3
+
+	th = pdf.font_size
+	# Line break equivalent to 4 lines
+	pdf.ln(4*th)
+
+	pdf.set_font('Times','B',14.0)
+	pdf.cell(epw, 0.0, 'Data Breaches', align='L')
+	pdf.set_font('Times','',10.0)
+	pdf.ln(5)
+
+	# Here we add more padding by passing 2*th as height
+	for row in firefoxmonitor:
+	    for datum in row:
+	        # Enter data in colums
+	        #datum = datum.decode('utf-8')
+	        try:
+	        	pdf.cell(col_width, 2*th, str(datum), border=1)
+	        except:
+	        	pass
+
+
+	    pdf.ln(2*th)
+
+	#Passwords leaked
+	epw = pdf.w - 2*pdf.l_margin
+
+	col_width = epw/3
+
+	th = pdf.font_size
+	# Line break equivalent to 4 lines
+	pdf.ln(4*th)
+
+	pdf.set_font('Times','B',14.0)
+	pdf.cell(epw, 0.0, 'Leaked Passwords', align='L')
+	pdf.set_font('Times','',10.0)
+	pdf.ln(5)
+
+	# Here we add more padding by passing 2*th as height
+	for row in passwords_list:
+	    for datum in row:
+	        # Enter data in colums
+	        #datum = datum.decode('utf-8')
+	        try:
+	        	pdf.cell(col_width, 2*th, str(datum), border=1)
+	        except:
+	        	pass
+
+
+	    pdf.ln(2*th)
+
+	if (socialmedia_list):
+
+		# Effective page width, or just epw
+		epw = pdf.w - 2*pdf.l_margin
+
+		col_width = epw/1
+
+		th = pdf.font_size
+		# Line break equivalent to 4 lines
+		pdf.ln(4*th)
+
+		pdf.set_font('Times','B',14.0)
+		pdf.cell(epw, 0.0, 'RRSS', align='L')
+		pdf.set_font('Times','',10.0)
+		pdf.ln(5)
+
+		# Here we add more padding by passing 2*th as height
+		for row in socialmedia_list:
+			pdf.cell(col_width, 2*th, str(row), border=1)
+			pdf.ln(2*th)
+
+	pdf.output(email+'.pdf', 'F')
+
+def generatecompanypdf(domain):
+	global passwords_company_list
+	print (info_color + "--------------------\nGenerating PDF File with results...\n--------------------")
+	pdf = FPDF()
+	pdf.add_page()
+	#Header
+	pdf.set_font('Helvetica', 'B', 8)
+	pdf.cell(130)
+	pdf.cell(60,1,'Magicleaks 2.0',0,0,'R')
+	pdf.ln(20)
+
+	#Title
+	pdf.set_font('Helvetica', 'B', 12)
+	pdf.cell(40, 10, 'Domain Analyzed: ' + domain)
+	pdf.ln(10)
+
+
+	#Passwords leaked
+	epw = pdf.w - 2*pdf.l_margin
+
+	col_width = epw/3
+
+	th = pdf.font_size
+	# Line break equivalent to 4 lines
+	pdf.ln(4*th)
+
+	pdf.set_font('Times','B',14.0)
+	pdf.cell(epw, 0.0, 'Leaked Passwords', align='L')
+	pdf.set_font('Times','',10.0)
+	pdf.ln(5)
+
+	# Here we add more padding by passing 2*th as height
+	for row in passwords_company_list:
+	    for datum in row:
+	        # Enter data in colums
+	        #datum = datum.decode('utf-8')
+	        try:
+	        	pdf.cell(col_width, 2*th, str(datum), border=1)
+	        except:
+	        	pass
+
+
+	    pdf.ln(2*th)
+
+	pdf.output(domain+'.pdf', 'F')
 
 
 ########## Main function #################3
@@ -734,7 +1054,9 @@ if __name__ == "__main__":
 			        print(green_color + "No leaks found for this domain" + normal_color)
 			elif onlyPasswords:
 				for line in email_list:
-					print(line)
+					fin = line.find(":", 0)
+					print(whiteB_color + line[0:fin]+ banner_color + ":" + red_color + line[fin+1:len(line)])
+					passwords_company_list.append([line[0:fin], line[fin+1:len(line)]])
 					if (args.makeDict):
 						makeDict(line)
 			else:
@@ -746,7 +1068,18 @@ if __name__ == "__main__":
 			if (args.pgp):
 				searchpgp(email)
 
+			if (args.makeDict):
+				print ("")
+				print (green_color + "["+red_color+"+"+green_color+"] "+whiteB_color+" The dict is created successfully and saved into dict.txt in this folder")
+				print (banner_color + "* In order to use it with Burp Suite use intruder module with "+red_color+"PITCHFORK " +banner_color+ "attack type and "+red_color+"PROCESS PAYLOAD"+banner_color+" with a "+red_color+"Match/Replace"+banner_color+" adding a regex "+red_color+"(.*):"+banner_color+" for username"+banner_color+" and "+red_color+":(.*) "+banner_color+"for password")
+
+
 		except IOError:
 		        	print(red_color + "Error: Unknow error.")
 	if (args.pgp):
 		searchpgp(email)
+
+	if (args.domain):
+		generatecompanypdf(args.domain)
+	elif (args.pdf):
+		generateuserpdf(email)
