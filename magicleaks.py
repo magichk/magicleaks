@@ -19,7 +19,6 @@ try:
 except ImportError:
 	print("No module named 'google' found")
 from fpdf import FPDF
-import numpy as np
 
 
 sistema = format(platform.system())
@@ -81,8 +80,8 @@ print(banner_color+"| |\/| | / _ \| |  _ | | |   | |   |  _|   / _ \ | ' /\___ \
 print(banner_color+"| |  | |/ ___ \ |_| || | |___| |___| |___ / ___ \| . \ ___) |"+end_banner_color)
 print(banner_color+"|_|  |_/_/   \_\____|___\____|_____|_____/_/   \_\_|\_\____/ "+end_banner_color)
 print(banner_color+"                                                             "+end_banner_color)
-print(banner_color+"--> By Magichk                                               "+end_banner_color)
-print(banner_color+"--> Collaborators: BinaryShadow                              \n"+end_banner_color)
+print(green_color+"["+red_color+"+"+green_color+"]"+whiteB_color+" By Magichk                                               "+end_banner_color)
+print(green_color+"["+red_color+"+"+green_color+"]"+whiteB_color+" Collaborators: BinaryShadow                              \n"+end_banner_color)
 
 
 ######### Check Arguments
@@ -286,15 +285,19 @@ def emailreputation(email):
 
 #Search have I been pwned.
 def haveibeenpwned(email):
+	global firefoxmonitor
+
 	print(info_color + "--------------------\nChecking breaches on haveibeenpwned.com...\n--------------------")
 
 	email = email.replace("@","%40") #Replace @ with url encode character
 	url = "https://haveibeenpwned.com/unifiedsearch/" + email
 	headers = {
-		'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
-	client = requests.Session()
-	client.headers.update(headers)
-	response = client.get(url, proxies=None)
+		#'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
+		'User-Agent': 'Agent: Mozilla/5.0 (X11; Linux x86_64; rv:78.0) Gecko/20100101 Firefox/78.0', "Accept-Language": "en-US,en;q=0.5"}
+	newclient = requests.Session()
+	newclient.headers.update(headers)
+	response = newclient.get(url, proxies=None)
+
 	total = 0
 	try:
 		resp_json = json.loads(response.text)
@@ -312,6 +315,7 @@ def haveibeenpwned(email):
 
 		while (cont < total):
 			print(whiteB_color +"Leak Detected!!!" + "\n" + red_color + "--> " + resp_json["Breaches"][cont]["Name"] + "\n\t" + red_color + "- Breach Date:" + resp_json["Breaches"][cont]["BreachDate"]+"\n\t- Is Verified? "+ str(resp_json["Breaches"][cont]["IsVerified"]))
+			firefoxmonitor.append([resp_json["Breaches"][cont]["Name"],resp_json["Breaches"][cont]["BreachDate"],""])
 			cont = cont + 1
 	except:
 		pass
@@ -840,6 +844,12 @@ def generateuserpdf(email):
 	global address
 	global passwords
 	global socialmedia_list
+	RRSS_Strings = {'fotolog', 'dropbox', 'shein', 'facebook'}
+	TLD_domains = {'gmail.com', 'outlook.es', 'hotmail.com', 'hotmail.es', 'protonmail.com'}
+
+	inicio = email.find("@")
+	if (inicio != -1):
+		tld = email[inicio+1:len(email)]
 
 	print (info_color + "--------------------\nGenerating PDF File with results...\n--------------------")
 	pdf = FPDF()
@@ -892,11 +902,17 @@ def generateuserpdf(email):
 	pdf.ln(5)
 
 	# Here we add more padding by passing 2*th as height
+	flag = 0
 	for row in firefoxmonitor:
 	    for datum in row:
 	        # Enter data in colums
 	        #datum = datum.decode('utf-8')
 	        try:
+	        	if (flag == 0):
+	        		data = datum.lower()
+	        		if tld not in TLD_domains:
+		        		if data in RRSS_Strings:
+		        			flag = 1
 	        	pdf.cell(col_width, 2*th, str(datum), border=1)
 	        except:
 	        	pass
@@ -930,6 +946,19 @@ def generateuserpdf(email):
 
 
 	    pdf.ln(2*th)
+
+	if (flag == 1):
+		epw = pdf.w - 2*pdf.l_margin
+
+		col_width = epw/1
+
+		th = pdf.font_size
+		# Line break equivalent to 4 lines
+		pdf.ln(4*th)
+
+		pdf.set_font('Times','',10.0)
+		pdf.ln(5)
+		pdf.cell(col_width, 2*th, "[+] Social network leaks detected in a company email!", border=1)
 
 	if (socialmedia_list):
 
