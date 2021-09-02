@@ -131,7 +131,7 @@ def check_email(email):
 			try:
 				check_firefox_monitor(email)
 				print (" ")
-				#check_pastebinLeaks(email)
+				check_pastebinLeaks(email)
 				print (" ")
 				emailreputation(email)
 				print (" ")
