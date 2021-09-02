@@ -90,27 +90,27 @@ def checkArgs():
 	parser = argparse.ArgumentParser(description=red_color + 'MagicLeaks 2.0\n' + info_color)
 	parser.add_argument('-e', "--email", action="store",
 						dest='email',
-	                    help="Email address to search.")
+						help="Email address to search.")
 	parser.add_argument('-f', "--file", action="store",
 						dest='file',
-	                    help="File with email accounts to search leaks.")
+						help="File with email accounts to search leaks.")
 	parser.add_argument('-d', "--domain", action="store",
 						dest='domain',
-	                    help="Domain to search email leaks")
+						help="Domain to search email leaks")
 	parser.add_argument('-t', "--tor", action="store_true",
-	                    help="Use Tor to search leaks in onion sites, need also set the domain or file.")
+						help="Use Tor to search leaks in onion sites, need also set the domain or file.")
 	parser.add_argument("--pdf", action="store_true",
-			    help="Generate a report from results in PDF file")
+				help="Generate a report from results in PDF file")
 	parser.add_argument('-oP', "--onlyPasswords", action="store_true",
-	                    help="Return only the ouput in format -> user@domain:password.")
+						help="Return only the ouput in format -> user@domain:password.")
 	parser.add_argument('-mD', "--makeDict", action="store_true",
-                        help="Make a Dictionary with some username masks, only works with -d or with -oP option")
+						help="Make a Dictionary with some username masks, only works with -d or with -oP option")
 	parser.add_argument('-p', "--pgp", action="store_true",
 						dest='pgp',
-                        help="Obtain pgp key if exists")
+						help="Obtain pgp key if exists")
 	parser.add_argument('-a', "--avast", action="store_true",
 						dest='avast',
-                        help="Check list of breaches in Avast service. NOTE: Take care, this service send an email to the checked account")
+						help="Check list of breaches in Avast service. NOTE: Take care, this service send an email to the checked account. Only works without --domain and --file options")
 
 	args = parser.parse_args()
 	if (len(sys.argv)==1) or (args.tor==True and (not args.email and not args.file and not args.domain)):
@@ -172,76 +172,76 @@ def check_email(email):
 
 
 def parse_firefox_monitor(response):
-    global firefoxmonitor
-    start_breachName = response.text.find("breach-title")
-    leaks = False
-    date=""
-    compromised_data=""
-    flag = 0
+	global firefoxmonitor
+	start_breachName = response.text.find("breach-title")
+	leaks = False
+	date=""
+	compromised_data=""
+	flag = 0
 
-    while start_breachName != -1:
-        leaks = True
-        print(whiteB_color +"Leak Detected!!!")
-        start_breachName = start_breachName + 14
-        end_breachName = response.text.find("</span>", start_breachName)
-        service = response.text[start_breachName:end_breachName]
-        print(red_color + "--> " + response.text[start_breachName:end_breachName])
-        end_key = end_breachName
-        start_index = response.text.find("breach-key", end_key) + 12
-        while start_index > 12 and (start_index < response.text.find("breach-title", start_breachName + 12) or response.text.find("breach-title", start_breachName + 12) < 12):
-            end_index = response.text.find("</span>", start_index)
-            start_key = response.text.find("breach-value", end_index) + 14
-            end_key = response.text.find("</span>", start_key)
-            value = response.text[start_index:end_index]
-            key = response.text[start_key:end_key]
-            print("\t\t- " + value + " " + key)
-            if (flag == 0):
-            	date=key
-            	flag = 1
-            else:
-            	compromised_data = key
-            	flag = 0
+	while start_breachName != -1:
+		leaks = True
+		print(whiteB_color +"Leak Detected!!!")
+		start_breachName = start_breachName + 14
+		end_breachName = response.text.find("</span>", start_breachName)
+		service = response.text[start_breachName:end_breachName]
+		print(red_color + "--> " + response.text[start_breachName:end_breachName])
+		end_key = end_breachName
+		start_index = response.text.find("breach-key", end_key) + 12
+		while start_index > 12 and (start_index < response.text.find("breach-title", start_breachName + 12) or response.text.find("breach-title", start_breachName + 12) < 12):
+			end_index = response.text.find("</span>", start_index)
+			start_key = response.text.find("breach-value", end_index) + 14
+			end_key = response.text.find("</span>", start_key)
+			value = response.text[start_index:end_index]
+			key = response.text[start_key:end_key]
+			print("\t\t- " + value + " " + key)
+			if (flag == 0):
+				date=key
+				flag = 1
+			else:
+				compromised_data = key
+				flag = 0
 
-            start_index = response.text.find("breach-key", end_key) + 12
-        start_breachName = response.text.find("breach-title", end_breachName)
-        firefoxmonitor.append([service,date,compromised_data])
+			start_index = response.text.find("breach-key", end_key) + 12
+		start_breachName = response.text.find("breach-title", end_breachName)
+		firefoxmonitor.append([service,date,compromised_data])
 
 
-    if not leaks:
-        print(green_color + "This email account not appears on Firefox Monitor")
-    return firefoxmonitor
+	if not leaks:
+		print(green_color + "This email account not appears on Firefox Monitor")
+	return firefoxmonitor
 
 def check_firefox_monitor(email):
-    print(info_color + "--------------------\nChecking on Firefox Monitor...\n--------------------")
-    # Extract valid csrf token from request.
-    url_form = 'https://monitor.firefox.com'
-    headers = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
-    client = requests.Session()
-    client.headers.update(headers)
-    response = client.get(url_form, proxies=tor_proxy)
-    inicio_csrf = response.text.find("_csrf")
-    if (inicio_csrf != -1):
-        inicio_csrf = response.text.find("value", inicio_csrf)
-        if (inicio_csrf != -1):
-            inicio_csrf = inicio_csrf + 7
-            fin_csrf = response.text.find("\"", inicio_csrf)
-            csrfToken = response.text[inicio_csrf:fin_csrf]
-            inicio_scannedEmailId = response.text.find("scannedEmailId")
-            inicio_scannedEmailId = response.text.find("value",inicio_scannedEmailId)
-            inicio_scannedEmailId = inicio_scannedEmailId+7
-            fin_scannedEmailId = response.text.find("\"",inicio_scannedEmailId)
-            scannedEmailID = response.text[inicio_scannedEmailId:fin_scannedEmailId]
-            emailHash = hashlib.sha1(bytes(email, "utf8"))
-            emailHash = emailHash.hexdigest().upper()
-            # Do the query
-            url = "https://monitor.firefox.com/scan"
-            params = {"_csrf": csrfToken, "email": email, "pageToken": "", "scannedEmailId": scannedEmailID, "emailHash": emailHash}
-            response = client.post(url, params, proxies=tor_proxy)
-            client.close()
-            parse_firefox_monitor(response)
-    else:
-        print(red_color + "Error: It was not possible to access firefox monitor (there is a limit of requests per hour)")
+	print(info_color + "--------------------\nChecking on Firefox Monitor...\n--------------------")
+	# Extract valid csrf token from request.
+	url_form = 'https://monitor.firefox.com'
+	headers = {
+		'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_10_1) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/39.0.2171.95 Safari/537.36', "Accept-Language": "en-US,en;q=0.5"}
+	client = requests.Session()
+	client.headers.update(headers)
+	response = client.get(url_form, proxies=tor_proxy)
+	inicio_csrf = response.text.find("_csrf")
+	if (inicio_csrf != -1):
+		inicio_csrf = response.text.find("value", inicio_csrf)
+		if (inicio_csrf != -1):
+			inicio_csrf = inicio_csrf + 7
+			fin_csrf = response.text.find("\"", inicio_csrf)
+			csrfToken = response.text[inicio_csrf:fin_csrf]
+			inicio_scannedEmailId = response.text.find("scannedEmailId")
+			inicio_scannedEmailId = response.text.find("value",inicio_scannedEmailId)
+			inicio_scannedEmailId = inicio_scannedEmailId+7
+			fin_scannedEmailId = response.text.find("\"",inicio_scannedEmailId)
+			scannedEmailID = response.text[inicio_scannedEmailId:fin_scannedEmailId]
+			emailHash = hashlib.sha1(bytes(email, "utf8"))
+			emailHash = emailHash.hexdigest().upper()
+			# Do the query
+			url = "https://monitor.firefox.com/scan"
+			params = {"_csrf": csrfToken, "email": email, "pageToken": "", "scannedEmailId": scannedEmailID, "emailHash": emailHash}
+			response = client.post(url, params, proxies=tor_proxy)
+			client.close()
+			parse_firefox_monitor(response)
+	else:
+		print(red_color + "Error: It was not possible to access firefox monitor (there is a limit of requests per hour)")
 
 
 def check_pastebinLeaks(email):
@@ -473,17 +473,17 @@ def pwndb_main(source, is_domain):
 
 
 def pwndb_find_leaks(source, session, is_domain):
-    url = "http://pwndb2am4tzkvold.onion/"
-    username = source
-    domain = "%"
-    if "@" in source:
-        username = source.split("@")[0]
-        domain = source.split("@")[1]
-        if not username:
-            username = '%'
-    request_data = {'luser': username, 'domain': domain, 'luseropr': 1, 'domainopr': 1, 'submitform': 'em'}
-    r = session.post(url, data=request_data)
-    return parse_pwndb_response(r.text, is_domain)
+	url = "http://pwndb2am4tzkvold.onion/"
+	username = source
+	domain = "%"
+	if "@" in source:
+		username = source.split("@")[0]
+		domain = source.split("@")[1]
+		if not username:
+			username = '%'
+	request_data = {'luser': username, 'domain': domain, 'luseropr': 1, 'domainopr': 1, 'submitform': 'em'}
+	r = session.post(url, data=request_data)
+	return parse_pwndb_response(r.text, is_domain)
 
 
 def parse_pwndb_response(text, is_domain):
@@ -649,14 +649,14 @@ def gitlab(email):
 				line = line.decode("utf-8")
 				inicio = line.find('property="og:title"')
 				if (inicio != -1):
-				    inicio = line.find("content=")
-				    if (inicio != -1):
-				        inicio = inicio + 9
-				        fin = line.find("\"", inicio)
-				        if (fin != -1):
-				            owner = line[inicio:fin]
-				            google(owner,email)
-				            socialmedia_list.append([url])
+					inicio = line.find("content=")
+					if (inicio != -1):
+						inicio = inicio + 9
+						fin = line.find("\"", inicio)
+						if (fin != -1):
+							owner = line[inicio:fin]
+							google(owner,email)
+							socialmedia_list.append([url])
 
 def avast(email):
 	print(info_color + "--------------------\nSending an email with account leaks to "+ email + " with Avast service...\n--------------------")
@@ -817,24 +817,24 @@ def github(email):
 		google(owner, email)
 
 def google(query,email):
-    global socialmedia_list
-    print (info_color + "--------------------\nSearching in Google: " + query + "...\n--------------------")
-    inicio = email.find("@")
-    fin = email.find(".", inicio)
-    tld = email[inicio+1:fin]
-    flag = 0
-    if tld in "gmail, hotmail, protonmail":
-    	tld2 = tld
-    	tld=""
-    	flag = 1
+	global socialmedia_list
+	print (info_color + "--------------------\nSearching in Google: " + query + "...\n--------------------")
+	inicio = email.find("@")
+	fin = email.find(".", inicio)
+	tld = email[inicio+1:fin]
+	flag = 0
+	if tld in "gmail, hotmail, protonmail":
+		tld2 = tld
+		tld=""
+		flag = 1
 
-    query = query + " " + tld
-    for j in search(query, tld="co.in", num=4, stop=4, pause=2):
-        print(green_color + "["+red_color+"+"+green_color+"]"+whiteB_color+" Link Found: " + green_color+j)
-        socialmedia_list.append([j])
-    #if (flag == 1):
-    #	for j in search(query+" "+tld2, tld="co.in", num=4, stop=4, pause=2):
-    #		print(green_color + "["+red_color+"+"+green_color+"]"+whiteB_color+" Link Found: " + green_color+j)
+	query = query + " " + tld
+	for j in search(query, tld="co.in", num=4, stop=4, pause=2):
+		print(green_color + "["+red_color+"+"+green_color+"]"+whiteB_color+" Link Found: " + green_color+j)
+		socialmedia_list.append([j])
+	#if (flag == 1):
+	#	for j in search(query+" "+tld2, tld="co.in", num=4, stop=4, pause=2):
+	#		print(green_color + "["+red_color+"+"+green_color+"]"+whiteB_color+" Link Found: " + green_color+j)
 
 
 
@@ -904,21 +904,21 @@ def generateuserpdf(email):
 	# Here we add more padding by passing 2*th as height
 	flag = 0
 	for row in firefoxmonitor:
-	    for datum in row:
-	        # Enter data in colums
-	        #datum = datum.decode('utf-8')
-	        try:
-	        	if (flag == 0):
-	        		data = datum.lower()
-	        		if tld not in TLD_domains:
-		        		if data in RRSS_Strings:
-		        			flag = 1
-	        	pdf.cell(col_width, 2*th, str(datum), border=1)
-	        except:
-	        	pass
+		for datum in row:
+			# Enter data in colums
+			#datum = datum.decode('utf-8')
+			try:
+				if (flag == 0):
+					data = datum.lower()
+					if tld not in TLD_domains:
+						if data in RRSS_Strings:
+							flag = 1
+				pdf.cell(col_width, 2*th, str(datum), border=1)
+			except:
+				pass
 
 
-	    pdf.ln(2*th)
+		pdf.ln(2*th)
 
 	#Passwords leaked
 	epw = pdf.w - 2*pdf.l_margin
@@ -936,16 +936,16 @@ def generateuserpdf(email):
 
 	# Here we add more padding by passing 2*th as height
 	for row in passwords_list:
-	    for datum in row:
-	        # Enter data in colums
-	        #datum = datum.decode('utf-8')
-	        try:
-	        	pdf.cell(col_width, 2*th, str(datum), border=1)
-	        except:
-	        	pass
+		for datum in row:
+			# Enter data in colums
+			#datum = datum.decode('utf-8')
+			try:
+				pdf.cell(col_width, 2*th, str(datum), border=1)
+			except:
+				pass
 
 
-	    pdf.ln(2*th)
+		pdf.ln(2*th)
 
 	if (flag == 1):
 		epw = pdf.w - 2*pdf.l_margin
@@ -1016,99 +1016,103 @@ def generatecompanypdf(domain):
 
 	# Here we add more padding by passing 2*th as height
 	for row in passwords_company_list:
-	    for datum in row:
-	        # Enter data in colums
-	        #datum = datum.decode('utf-8')
-	        try:
-	        	pdf.cell(col_width, 2*th, str(datum), border=1)
-	        except:
-	        	pass
+		for datum in row:
+			# Enter data in colums
+			#datum = datum.decode('utf-8')
+			try:
+				pdf.cell(col_width, 2*th, str(datum), border=1)
+			except:
+				pass
 
 
-	    pdf.ln(2*th)
+		pdf.ln(2*th)
 
 	pdf.output(domain+'.pdf', 'F')
 
 
+def emailProcess(args, email=""):
+	if not email:
+		email = args.email
+	if args.tor:
+		if sistema == "Linux":
+			os.system("killall -HUP tor")
+	check_email(email)
+	if args.avast and not args.domain and not args.file:
+		avast(email)
+	if args.pgp:
+		searchpgp(email)
+
 ########## Main function #################3
 if __name__ == "__main__":
-
-	flag = 0 #to check if it's necessary create a dict after.
 	args = checkArgs()
 	onlyPasswords = args.onlyPasswords
-	if (args.tor):
+	if args.tor:
 		sistema = format(platform.system())
-		if (sistema == "Linux"):
+		if sistema == "Linux":
 			tor_service = os.system("service tor status >> /dev/null")
-			if(tor_service != 0):
+			if tor_service != 0:
 				print(red_color + "Tor service no started. You need started this to execute this option.")
 				exit(1)
-	elif (sistema == "Windows"):
+	elif sistema == "Windows":
 		tor_proxy = {'http': 'socks5h://127.0.0.1:9150', 'https': 'socks5h://127.0.0.1:9150'}
 	else:
-	  	tor_proxy = None
-	if (args.email):
-		email = args.email
-		if (args.tor):
-			if (sistema == "Linux"):
-				os.system("killall -HUP tor")
-		check_email(email)
-		if (args.avast):
-			avast(email)
-	if (args.file):
+		tor_proxy = None
+	if args.email:
+		emailProcess(args)
+		if args.pdf:
+			generateuserpdf(args.email)
+	if args.file:
 		try:
-			if  not onlyPasswords:
+			if not onlyPasswords:
 				print(whiteB_color + "--->Reading file with email accounts...<---")
 			with open(sys.argv[2]) as myfile:
 				lines = myfile.readlines()
+			if args.avast:
+				print(red_color + "Avast feature is only intended to be used with your own email address and not on a list of emails."+ normal_color)
+
 			for email in lines:
-				os.system("killall -HUP tor")
-				email = email[0:len(email) - 1]
-				check_email(email)
+				emailProcess(args, email[0:len(email) - 1])
 		except IOError:
 			print(red_color + "Error: The file not exist or bad format.")
-	if (args.domain):
+	if args.domain:
 		domain = args.domain
+		pwndb_online = True
 		try:
 			if not args.tor:
 				print(red_color + "Error: This functionality need tor to work.")
 				exit(1)
 				domain = args.domain
-			if (domain[0] != '@'):
-			    	domain = '@' + domain
-			if  not onlyPasswords:
-			        print(whiteB_color + "--->Searching email accounts leaks on " + domain + " domain...<---")
-			email_list = pwndb_main(domain, True)
-			if not email_list:
-			        print(green_color + "No leaks found for this domain" + normal_color)
-			elif onlyPasswords:
-				for line in email_list:
-					fin = line.find(":", 0)
-					print(whiteB_color + line[0:fin]+ banner_color + ":" + red_color + line[fin+1:len(line)])
-					passwords_company_list.append([line[0:fin], line[fin+1:len(line)]])
-					if (args.makeDict):
-						makeDict(line)
-			else:
-				print(whiteB_color + "Found " + str(len(email_list)) + " accounts with leaks in selected domain: \n" + red_color + ' || '.join(email_list))
-				for email in email_list:
-				            os.system("killall -HUP tor")
-				            #check email
-				            check_email(email)
-			if (args.pgp):
-				searchpgp(email)
+			if domain[0] != '@':
+					domain = '@' + domain
+			if not onlyPasswords:
+				print(whiteB_color + "--->Searching email accounts leaks on " + domain + " domain...<---")
+			try:
+				email_list = pwndb_main(domain, True)
+			except:
+				print(red_color + "You have problems with your connection to the tor proxy or pwndb is not accessible." + normal_color)
+				pwndb_online=False
 
-			if (args.makeDict):
-				print ("")
-				print (green_color + "["+red_color+"+"+green_color+"] "+whiteB_color+" The dict is created successfully and saved into dict.txt in this folder")
-				print (banner_color + "* In order to use it with Burp Suite use intruder module with "+red_color+"PITCHFORK " +banner_color+ "attack type and "+red_color+"PROCESS PAYLOAD"+banner_color+" with a "+red_color+"Match/Replace"+banner_color+" adding a regex "+red_color+"(.*):"+banner_color+" for username"+banner_color+" and "+red_color+":(.*) "+banner_color+"for password")
-
-
+			if pwndb_online:
+				if not email_list:
+					print(green_color + "No leaks found for this domain" + normal_color)
+				elif onlyPasswords:
+					for line in email_list:
+						fin = line.find(":", 0)
+						print(whiteB_color + line[0:fin]+ banner_color + ":" + red_color + line[fin+1:len(line)])
+						passwords_company_list.append([line[0:fin], line[fin+1:len(line)]])
+						if args.makeDict:
+							makeDict(line)
+					if args.makeDict:
+						print("")
+						print(green_color + "["+red_color+"+"+green_color+"] "+whiteB_color+" The dict is created successfully and saved into dict.txt in this folder")
+						print(banner_color + "* In order to use it with Burp Suite use intruder module with "+red_color+"PITCHFORK " +banner_color+ "attack type and "+red_color+"PROCESS PAYLOAD"+banner_color+" with a "+red_color+"Match/Replace"+banner_color+" adding a regex "+red_color+"(.*):"+banner_color+" for username"+banner_color+" and "+red_color+":(.*) "+banner_color+"for password")
+				else:
+					print(whiteB_color + "Found " + str(len(email_list)) + " accounts with leaks in selected domain: \n" + red_color + ' || '.join(email_list))
+					if args.avast:
+						print(red_color + "Avast feature is only intended to be used with your own email address and not on a domain."+ normal_color)
+					for email in email_list:
+						emailProcess(args, email)
+				if args.pdf:
+					generatecompanypdf(args.domain)
 		except IOError:
-		        	print(red_color + "Error: Unknow error.")
-	if (args.pgp):
-		searchpgp(email)
-
-	if (args.domain):
-		generatecompanypdf(args.domain)
-	elif (args.pdf):
-		generateuserpdf(email)
+			print(red_color + "Error: Unknow error.")
