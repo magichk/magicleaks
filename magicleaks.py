@@ -845,7 +845,7 @@ def generateuserpdf(email):
 	global passwords
 	global socialmedia_list
 	RRSS_Strings = {'fotolog', 'dropbox', 'shein', 'facebook'}
-	TLD_domains = {'gmail.com', 'outlook.es', 'hotmail.com.uk', 'hotmail.es', 'protonmail.com'}
+	TLD_domains = {'gmail.com', 'outlook.es', 'hotmail.com', 'hotmail.es', 'protonmail.com'}
 
 	inicio = email.find("@")
 	if (inicio != -1):
