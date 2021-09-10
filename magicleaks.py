@@ -100,7 +100,9 @@ def checkArgs():
 	parser.add_argument('-t', "--tor", action="store_true",
 						help="Use Tor to search leaks in onion sites, need also set the domain or file.")
 	parser.add_argument("--pdf", action="store_true",
-				help="Generate a report from results in PDF file")
+						help="Generate a report from results in PDF file")
+	parser.add_argument('--json', action="store_true",
+						help="Generate a JSON ouput from results")
 	parser.add_argument('-oP', "--onlyPasswords", action="store_true",
 						help="Return only the ouput in format -> user@domain:password.")
 	parser.add_argument('-mD', "--makeDict", action="store_true",
@@ -1030,6 +1032,64 @@ def generatecompanypdf(domain):
 	pdf.output(domain+'.pdf', 'F')
 
 
+def generateuserJSON(email):
+	global firefoxmonitor
+	global owner
+	global address
+	global passwords
+	global socialmedia_list
+	RRSS_Strings = {'fotolog', 'dropbox', 'shein', 'facebook'}
+	TLD_domains = {'gmail.com', 'outlook.es', 'hotmail.com', 'hotmail.es', 'protonmail.com'}
+
+	inicio = email.find("@")
+	if (inicio != -1):
+		tld = email[inicio+1:len(email)]
+
+	print (info_color + "--------------------\nGenerating JSON File with results...\n--------------------")
+
+	# Data Breach
+	data_breach = []
+	for row in firefoxmonitor:
+		if (row[0] != "Source"):
+			data_breach.append({'source': row[0],
+				'date': row[1],
+				'compromised': row[2]})
+
+	# Passwords leaked
+	pass_leaked = []
+	for row in passwords_list:
+		if (row[0] != "Source"):
+			pass_leaked.append({'source': row[0],
+				'password': row[1]})
+
+	# Social Media
+	socialmedia = []
+	if (socialmedia_list):
+		for row in socialmedia_list:
+			socialmedia.append({'url': row[0]})
+
+	data = []
+	details = []
+	data.append({'email': email})
+	if (owner):
+		details.append({'owner': owner})
+	if (phone):
+		details.append({'phone': phone})
+	if (address):
+		details.append({'address': address})
+	if (details):
+		data.append({'details': details})
+	if (data_breach):
+		data.append({'data_breach': data_breach})
+	if (pass_leaked):
+		data.append({'pass_leaked': pass_leaked})
+	if (socialmedia):
+		data.append({'socialmedia': socialmedia})
+
+	with open(email + '.json', 'w') as outfile:
+		json.dump(data, outfile, indent=4)
+
+
 def emailProcess(args, email=""):
 	if not email:
 		email = args.email
@@ -1061,6 +1121,8 @@ if __name__ == "__main__":
 		emailProcess(args)
 		if args.pdf:
 			generateuserpdf(args.email)
+		if args.json:
+			generateuserJSON(args.email)
 	if args.file:
 		try:
 			if not onlyPasswords:
