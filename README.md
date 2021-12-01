@@ -7,6 +7,18 @@ A python3 script for search possible email account leaks. This project is for ed
 You can install the dependencies using the requests.txt file:
 ```pip3 install -r requirements.txt```
 
+* Note: The new versions of tor package not works properly with magicleaks. So please, install a version before 0.4.6.XX-X , for example this package https://packages.debian.org/bullseye/amd64/tor/download in case if you use a debian distribution.
+
+If you have alredy installed a new version of tor service, follow this steps in order to downgrade the version of the package:
+
+```
+1.- sudo apt-get purge tor --remove 
+2.- Download tor package , for example this for debian based distributions https://packages.debian.org/bullseye/amd64/tor/download
+3.- chmod +x tor_0.4.5.10-1\~deb11u1_amd64.deb
+4.- sudo dpkg -i tor_0.4.5.10-1\~deb11u1_amd64.deb
+```
+
+
 ### Checks
     - Firefox monitor
     - Pastebin leaks
